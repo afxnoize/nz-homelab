@@ -22,6 +22,7 @@
 | 環境管理           | Nix Flakes     | `nix develop`                |
 | タスクランナー     | just           | `just <recipe>`              |
 | バックアップ       | Kopia          | `kopia` (via justfile)       |
+| B2 操作            | backblaze-b2   | `b2`                         |
 | コンテナ           | Podman Quadlet | `systemctl --user`           |
 | シークレット暗号化 | SOPS + age     | `sops --encrypt / --decrypt` |
 | テンプレート展開   | gomplate       | `gomplate -f in.tmpl -o out` |

@@ -31,6 +31,12 @@
     }:
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      # nixpkgs installs the B2 CLI as backblaze-b2; expose it only as b2,
+      # the name the upstream docs and the PreToolUse hook patterns expect.
+      b2 = pkgs.runCommand "b2" { } ''
+        mkdir -p $out/bin
+        ln -s ${pkgs.backblaze-b2}/bin/backblaze-b2 $out/bin/b2
+      '';
     in
     {
       devShells.x86_64-linux.default = pkgs.mkShell {
@@ -42,6 +48,7 @@
           just
           gomplate
           lefthook
+          b2
         ];
       };
 
