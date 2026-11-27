@@ -85,7 +85,7 @@ just oci ssh                  # OCI SSH 接続
 | DNS フィルタ   | AdGuard Home + Tailscale Serve                                                                |
 | Forward Proxy  | sing-box + Tailscale Sidecar (OCI、SOCKS5/HTTP CONNECT)                                       |
 | LLM 推論       | Ollama + Open WebUI + Tailscale Serve (WSL2 / NVIDIA GPU)                                     |
-| メディア配信   | Jellyfin + Tailscale Serve (LiRu / USB SSD、Intel QSV)                                        |
+| メディア配信   | Jellyfin + Tailscale Serve (LiRu / USB SSD)                                                   |
 | シークレット   | SOPS (age 暗号化) → Git 管理                                                                  |
 | スケジュール   | systemd user timer (daily)                                                                    |
 | コンテナ       | Podman Quadlet (systemd 統合)                                                                 |

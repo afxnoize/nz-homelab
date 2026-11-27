@@ -16,7 +16,7 @@ Jellyfin メディアサーバーを LiRu 上の Podman Quadlet で運用する�
 | ------------------------------------- | ------------------------------------------------------- |
 | `justfile`                            | 操作コマンド定義                                        |
 | `secrets.yaml`                        | Tailscale authkey と追加マウント（sops + age で暗号化） |
-| `quadlet/jellyfin.container.tmpl`     | Jellyfin コンテナ（Intel iGPU を渡す）                  |
+| `quadlet/jellyfin.container.tmpl`     | Jellyfin コンテナ                                       |
 | `quadlet/jellyfin-ts.container.tmpl`  | Tailscale サイドカーテンプレート                        |
 | `quadlet/jellyfin-ts-serve.json.tmpl` | Tailscale Serve 設定（:443 → 127.0.0.1:8096）           |
 | `quadlet/jellyfin-config.volume`      | Jellyfin 設定・メタデータ（ルートディスク）             |
