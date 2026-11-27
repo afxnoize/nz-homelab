@@ -43,6 +43,7 @@ just vaultwarden <recipe>     # vaultwarden 操作
 just gatus <recipe>           # gatus 操作
 just ollama <recipe>          # ollama 操作 (WSL2 マシン向け)
 just jellyfin <recipe>        # jellyfin 操作 (LiRu 向け)
+just samba <recipe>           # samba 操作 (LiRu 向け)
 just observability <recipe>       # observability 操作
 just oci build                # OCI NixOS ビルド確認
 just oci deploy               # OCI NixOS デプロイ (switch)
@@ -71,6 +72,7 @@ just oci ssh                  # OCI SSH 接続
 - [services/observability/README.md](services/observability/README.md) — Alloy + VictoriaLogs + VictoriaMetrics + Grafana 観測スタック
 - [services/sing-box/README.md](services/sing-box/README.md) — sing-box 選択的 forward proxy (SOCKS5/HTTP、Tailscale 経由)
 - [services/jellyfin/README.md](services/jellyfin/README.md) — Jellyfin メディアサーバー + Tailscale Serve (LiRu / USB SSD)
+- [services/samba/README.md](services/samba/README.md) — Samba で `/srv/media` を Tailnet 内に共有 (LiRu)
 
 ## 技術スタック
 
@@ -86,6 +88,7 @@ just oci ssh                  # OCI SSH 接続
 | Forward Proxy  | sing-box + Tailscale Sidecar (OCI、SOCKS5/HTTP CONNECT)                                       |
 | LLM 推論       | Ollama + Open WebUI + Tailscale Serve (WSL2 / NVIDIA GPU)                                     |
 | メディア配信   | Jellyfin + Tailscale Serve (LiRu / USB SSD)                                                   |
+| ファイル共有   | Samba + Tailscale Sidecar (LiRu、SMB で /srv/media を共有)                                    |
 | シークレット   | SOPS (age 暗号化) → Git 管理                                                                  |
 | スケジュール   | systemd user timer (daily)                                                                    |
 | コンテナ       | Podman Quadlet (systemd 統合)                                                                 |
@@ -137,7 +140,9 @@ services/
 ├── adguard-home/                     # → README.md 参照
 ├── ollama/                           # → README.md 参照 (WSL2 マシン)
 ├── observability/                    # → README.md 参照 (観測スタック)
-└── sing-box/                         # → README.md 参照 (Tailscale 内 forward proxy)
+├── sing-box/                         # → README.md 参照 (Tailscale 内 forward proxy)
+├── jellyfin/                         # → README.md 参照 (LiRu メディアサーバー)
+└── samba/                            # → README.md 参照 (LiRu の /srv/media を SMB 共有)
 ```
 
 ## 設計判断

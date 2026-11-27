@@ -1,0 +1,28 @@
+[Unit]
+Requires=samba-ts.service
+After=samba-ts.service
+StartLimitIntervalSec=0
+
+[Container]
+Image=docker.io/dockurr/samba:latest
+AutoUpdate=registry
+LogDriver=journald
+Network=container:systemd-samba-ts
+Volume=/srv/media:/shared
+Volume=%h/.config/containers/systemd/samba-smb.conf:/etc/samba/smb.conf:ro
+Environment=USER={{ .Env.samba_user }}
+Environment=PASS={{ .Env.samba_password }}
+HealthCmd=pgrep smbd || exit 1
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=30s
+
+[Service]
+# Without the SSD, uploads would land on the root disk under the empty mount point.
+ExecStartPre=/usr/bin/mountpoint -q /srv/media
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target

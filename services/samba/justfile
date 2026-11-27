@@ -1,0 +1,85 @@
+_default:
+    @just --list
+
+set dotenv-load := false
+
+secrets := env("SAMBA_SECRETS", "./secrets.yaml")
+quadlet_dir := env("XDG_CONFIG_HOME", env("HOME") / ".config") / "containers/systemd"
+
+units := "samba-ts samba"
+
+####################
+# Lifecycle
+####################
+
+# Deploy quadlet files and reload systemd
+[group('lifecycle')]
+deploy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "$(sops -d --extract '["ts_authkey"]' {{ secrets }})" != tskey-* ]]; then
+      echo "ERROR: set ts_authkey in {{ secrets }} (sops {{ secrets }})" >&2
+      exit 1
+    fi
+    mkdir -p {{ quadlet_dir }}
+    echo "==> Generating quadlet files from templates"
+    sops exec-env {{ secrets }} ' \
+      gomplate -f quadlet/samba.container.tmpl    -o {{ quadlet_dir }}/samba.container && \
+      gomplate -f quadlet/samba-ts.container.tmpl -o {{ quadlet_dir }}/samba-ts.container \
+    '
+    echo "==> Copying quadlet files"
+    cp quadlet/samba-ts-serve.json {{ quadlet_dir }}/
+    cp quadlet/samba-ts-state.volume {{ quadlet_dir }}/
+    cp quadlet/smb.conf {{ quadlet_dir }}/samba-smb.conf
+    systemctl --user daemon-reload
+    echo "==> Deployed (\\\\samba\\media)"
+
+# Start ts sidecar → samba
+[group('lifecycle')]
+start:
+    systemctl --user start {{ units }}
+
+# Stop samba → ts sidecar (reverse order)
+[group('lifecycle')]
+stop:
+    systemctl --user stop samba
+    systemctl --user stop samba-ts
+
+# Restart all units
+[group('lifecycle')]
+restart:
+    systemctl --user restart {{ units }}
+
+####################
+# Observe
+####################
+
+# Show service status
+[group('observe')]
+status:
+    -systemctl --user status {{ units }} --no-pager
+
+# Show recent logs
+[group('observe')]
+logs count="50":
+    journalctl --user -u samba-ts -u samba --no-pager -n {{ count }}
+
+# Follow logs
+[group('observe')]
+logs-follow:
+    journalctl --user -u samba-ts -u samba -f
+
+# Print the share login (user / password)
+[group('observe')]
+credentials:
+    @sops -d --extract '["samba_user"]' {{ secrets }}
+    @sops -d --extract '["samba_password"]' {{ secrets }}
+
+####################
+# Maintenance
+####################
+
+# Update container images
+[group('maintenance')]
+update:
+    podman auto-update
