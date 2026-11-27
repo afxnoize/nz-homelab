@@ -53,11 +53,11 @@ deploy:
     mkdir -p {{ quadlet_dir }}
     echo "==> Generating quadlet files from templates"
     sops exec-env {{ secrets }} ' \
+      gomplate -f quadlet/jellyfin.container.tmpl     -o {{ quadlet_dir }}/jellyfin.container && \
       gomplate -f quadlet/jellyfin-ts.container.tmpl  -o {{ quadlet_dir }}/jellyfin-ts.container && \
       gomplate -f quadlet/jellyfin-ts-serve.json.tmpl -o {{ quadlet_dir }}/jellyfin-ts-serve.json \
     '
     echo "==> Copying quadlet files"
-    cp quadlet/jellyfin.container {{ quadlet_dir }}/
     cp quadlet/jellyfin-config.volume {{ quadlet_dir }}/
     cp quadlet/jellyfin-ts-state.volume {{ quadlet_dir }}/
     systemctl --user daemon-reload

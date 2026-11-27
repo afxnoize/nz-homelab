@@ -12,15 +12,15 @@ Jellyfin メディアサーバーを LiRu 上の Podman Quadlet で運用する�
 
 ## 構成
 
-| ファイル                              | 役割                                          |
-| ------------------------------------- | --------------------------------------------- |
-| `justfile`                            | 操作コマンド定義                              |
-| `secrets.yaml`                        | Tailscale authkey（sops + age で暗号化）      |
-| `quadlet/jellyfin.container`          | Jellyfin コンテナ（Intel iGPU を渡す）        |
-| `quadlet/jellyfin-ts.container.tmpl`  | Tailscale サイドカーテンプレート              |
-| `quadlet/jellyfin-ts-serve.json.tmpl` | Tailscale Serve 設定（:443 → 127.0.0.1:8096） |
-| `quadlet/jellyfin-config.volume`      | Jellyfin 設定・メタデータ（ルートディスク）   |
-| `quadlet/jellyfin-ts-state.volume`    | Tailscale state                               |
+| ファイル                              | 役割                                                    |
+| ------------------------------------- | ------------------------------------------------------- |
+| `justfile`                            | 操作コマンド定義                                        |
+| `secrets.yaml`                        | Tailscale authkey と追加マウント（sops + age で暗号化） |
+| `quadlet/jellyfin.container.tmpl`     | Jellyfin コンテナ（Intel iGPU を渡す）                  |
+| `quadlet/jellyfin-ts.container.tmpl`  | Tailscale サイドカーテンプレート                        |
+| `quadlet/jellyfin-ts-serve.json.tmpl` | Tailscale Serve 設定（:443 → 127.0.0.1:8096）           |
+| `quadlet/jellyfin-config.volume`      | Jellyfin 設定・メタデータ（ルートディスク）             |
+| `quadlet/jellyfin-ts-state.volume`    | Tailscale state                                         |
 
 ## ストレージ
 
@@ -32,7 +32,12 @@ SSD は fstab で `/srv/media` にマウントする（`nofail` 付き。SSD が
 | `/srv/media/movie`          | `/media/movie` | 映画（読み取り専用）           |
 | `/srv/media/jellyfin-cache` | `/cache`       | トランスコード・画像キャッシュ |
 
-music と movie 以外のライブラリはリポジトリに含めない。ホスト側で `~/.config/containers/systemd/jellyfin.container.d/local.conf` に `[Container]` と `Volume=` を書いて追加する。`deploy` はこのディレクトリに触れない。
+music と movie 以外のマウントは `secrets.yaml` の `extra_volumes` に暗号化して置く。1行に1つ、`ホスト側:コンテナ側:ro` の形で書く。`deploy` が `Volume=` 行に展開して `jellyfin.container` に足す。
+
+```bash
+sops services/jellyfin/secrets.yaml   # extra_volumes を編集
+just jellyfin deploy && just jellyfin restart
+```
 
 ルートディスクの空きが少ない（2026-11-26 時点で 24G）ため、キャッシュは SSD に置く。
 
