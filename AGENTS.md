@@ -42,6 +42,7 @@ just backup <recipe>          # kopia 操作
 just vaultwarden <recipe>     # vaultwarden 操作
 just gatus <recipe>           # gatus 操作
 just ollama <recipe>          # ollama 操作 (WSL2 マシン向け)
+just jellyfin <recipe>        # jellyfin 操作 (LiRu 向け)
 just observability <recipe>       # observability 操作
 just oci build                # OCI NixOS ビルド確認
 just oci deploy               # OCI NixOS デプロイ (switch)
@@ -69,6 +70,7 @@ just oci ssh                  # OCI SSH 接続
 - [services/ollama/README.md](services/ollama/README.md) — Ollama + Open WebUI + Tailscale Serve (WSL2 / GPU)
 - [services/observability/README.md](services/observability/README.md) — Alloy + VictoriaLogs + VictoriaMetrics + Grafana 観測スタック
 - [services/sing-box/README.md](services/sing-box/README.md) — sing-box 選択的 forward proxy (SOCKS5/HTTP、Tailscale 経由)
+- [services/jellyfin/README.md](services/jellyfin/README.md) — Jellyfin メディアサーバー + Tailscale Serve (LiRu / USB SSD)
 
 ## 技術スタック
 
@@ -83,6 +85,7 @@ just oci ssh                  # OCI SSH 接続
 | DNS フィルタ   | AdGuard Home + Tailscale Serve                                                                |
 | Forward Proxy  | sing-box + Tailscale Sidecar (OCI、SOCKS5/HTTP CONNECT)                                       |
 | LLM 推論       | Ollama + Open WebUI + Tailscale Serve (WSL2 / NVIDIA GPU)                                     |
+| メディア配信   | Jellyfin + Tailscale Serve (LiRu / USB SSD、Intel QSV)                                        |
 | シークレット   | SOPS (age 暗号化) → Git 管理                                                                  |
 | スケジュール   | systemd user timer (daily)                                                                    |
 | コンテナ       | Podman Quadlet (systemd 統合)                                                                 |

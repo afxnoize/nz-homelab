@@ -1,0 +1,108 @@
+_default:
+    @just --list
+
+set dotenv-load := false
+
+secrets := env("JELLYFIN_SECRETS", "./secrets.yaml")
+quadlet_dir := env("XDG_CONFIG_HOME", env("HOME") / ".config") / "containers/systemd"
+media_uuid := "f11bec43-bd87-4333-a1f2-406af37eabb3"
+media_root := "/srv/media"
+
+units := "jellyfin-ts jellyfin"
+
+####################
+# Setup
+####################
+
+# Mount the USB SSD at /srv/media via fstab and create library dirs (sudo, idempotent)
+[group('setup')]
+setup-disk:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dev=/dev/disk/by-uuid/{{ media_uuid }}
+    [[ -e "$dev" ]] || { echo "ERROR: $dev not found (is the SSD plugged in?)" >&2; exit 1; }
+    fstype=$(lsblk -no FSTYPE "$dev")
+    [[ "$fstype" == "ext4" ]] || { echo "ERROR: expected ext4 on $dev, got '${fstype}'" >&2; exit 1; }
+    if ! grep -q "UUID={{ media_uuid }}" /etc/fstab; then
+      echo "==> Adding fstab entry"
+      echo "UUID={{ media_uuid }} {{ media_root }} ext4 defaults,noatime,nofail,x-systemd.device-timeout=10s 0 2" | sudo tee -a /etc/fstab
+      sudo systemctl daemon-reload
+    fi
+    sudo mkdir -p {{ media_root }}
+    mountpoint -q {{ media_root }} || sudo mount {{ media_root }}
+    dirs=(music movie jellyfin-cache)
+    for d in "${dirs[@]}"; do sudo mkdir -p "{{ media_root }}/$d"; done
+    for d in "${dirs[@]}"; do sudo chown "$(id -u):$(id -g)" "{{ media_root }}/$d"; done
+    ls -la {{ media_root }}
+    df -h {{ media_root }}
+
+####################
+# Lifecycle
+####################
+
+# Deploy quadlet files and reload systemd
+[group('lifecycle')]
+deploy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    export TS_DOMAIN=$(tailscale status --json | jq -r '.MagicDNSSuffix')
+    if [[ -z "${TS_DOMAIN}" || "${TS_DOMAIN}" == "null" ]]; then
+      echo "ERROR: failed to get Tailscale MagicDNS suffix" >&2
+      exit 1
+    fi
+    mkdir -p {{ quadlet_dir }}
+    echo "==> Generating quadlet files from templates"
+    sops exec-env {{ secrets }} ' \
+      gomplate -f quadlet/jellyfin-ts.container.tmpl  -o {{ quadlet_dir }}/jellyfin-ts.container && \
+      gomplate -f quadlet/jellyfin-ts-serve.json.tmpl -o {{ quadlet_dir }}/jellyfin-ts-serve.json \
+    '
+    echo "==> Copying quadlet files"
+    cp quadlet/jellyfin.container {{ quadlet_dir }}/
+    cp quadlet/jellyfin-config.volume {{ quadlet_dir }}/
+    cp quadlet/jellyfin-ts-state.volume {{ quadlet_dir }}/
+    systemctl --user daemon-reload
+    echo "==> Deployed (url: https://jellyfin.${TS_DOMAIN})"
+
+# Start ts sidecar → jellyfin
+[group('lifecycle')]
+start:
+    systemctl --user start {{ units }}
+
+# Stop jellyfin → ts sidecar (reverse order)
+[group('lifecycle')]
+stop:
+    systemctl --user stop jellyfin
+    systemctl --user stop jellyfin-ts
+
+# Restart all units
+[group('lifecycle')]
+restart:
+    systemctl --user restart {{ units }}
+
+####################
+# Observe
+####################
+
+# Show service status
+[group('observe')]
+status:
+    -systemctl --user status {{ units }} --no-pager
+
+# Show recent logs
+[group('observe')]
+logs count="50":
+    journalctl --user -u jellyfin-ts -u jellyfin --no-pager -n {{ count }}
+
+# Follow logs
+[group('observe')]
+logs-follow:
+    journalctl --user -u jellyfin-ts -u jellyfin -f
+
+####################
+# Maintenance
+####################
+
+# Update container images
+[group('maintenance')]
+update:
+    podman auto-update

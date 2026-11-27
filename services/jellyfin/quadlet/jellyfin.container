@@ -1,0 +1,29 @@
+[Unit]
+Requires=jellyfin-ts.service
+After=jellyfin-ts.service
+StartLimitIntervalSec=0
+
+[Container]
+Image=docker.io/jellyfin/jellyfin:latest
+AutoUpdate=registry
+LogDriver=journald
+Network=container:systemd-jellyfin-ts
+Volume=jellyfin-config.volume:/config
+Volume=/srv/media/jellyfin-cache:/cache
+Volume=/srv/media/music:/media/music:ro
+Volume=/srv/media/movie:/media/movie:ro
+AddDevice=/dev/dri/renderD128
+HealthCmd=curl -sf http://127.0.0.1:8096/health || exit 1
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=60s
+
+[Service]
+# Without the SSD, Jellyfin would scan empty dirs and drop every library item.
+ExecStartPre=/usr/bin/mountpoint -q /srv/media
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target
