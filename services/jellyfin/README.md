@@ -64,6 +64,22 @@ just jellyfin start
 
 ハードウェアトランスコードは、管理画面の「再生 → トランスコード」で Intel QuickSync（QSV）を選ぶと有効になる。
 
+## タグとアートワークの管理
+
+音声ファイルのタグ（album / album_artist / artist / track / title）とアルバムのアートワークは、`$XDG_CONFIG_HOME/media-tags/tags.toml` を正として管理する。ファイルパスと作品名を含むため、リポジトリには置かない。
+
+```bash
+python3 services/jellyfin/scripts/media-tags.py export /srv/media/<dir> > tags.toml   # 現状を書き出す
+python3 services/jellyfin/scripts/media-tags.py apply --dry-run   # 変更されるファイルを表示
+python3 services/jellyfin/scripts/media-tags.py apply
+```
+
+- `apply` は引数を省略すると `$XDG_CONFIG_HOME/media-tags/tags.toml` を読む
+- タグは ffmpeg のストリームコピーで書き換え、一致するファイルは飛ばす
+- `cover` に画像のパスを書くと、音声ファイルと同じディレクトリに `folder.<拡張子>` としてコピーする。Jellyfin はこれをアルバムのアートワークとして表示する
+- `album_artist` を空にすると `artist` と同じ値になる。`artist` はリストで複数指定でき、track 側に書くとその曲だけ上書きする
+- `/srv/media` へ書き込むため、ホストで実行する
+
 ## コマンド
 
 | コマンド                    | 説明                                         |
